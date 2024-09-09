@@ -1,0 +1,78 @@
+<style>
+    #networks {
+        gap: 40px;
+        display: flex;
+    }
+    div[data-network] {
+        width: 100%;
+    }
+    div[data-network] > div {
+        display: flex;
+        justify-content: space-between;
+    }
+</style>
+<div id = "networks">
+    <div data-network = "2.4"></div>
+    <div data-network = "5"></div>
+</div>
+<script async type = "module">
+    import { fetch_endpoint } from "/js/main.js";
+    import { netgear_decode, WirelessFields } from "/js/expressions.js";
+
+    (async () => {
+        const modes = {
+            "2.4": ["54", "433", "1000"],
+            "5": ["433", "1000", "2165"]
+        }
+        const channels = {
+            "2.4": ["Auto", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"],
+            "5": ["36", "40", "44", "48", "149", "153", "157", "161"]
+        }
+
+        // Fetch data from router
+        const response = await fetch_endpoint("WirelessSettings.asp");
+        const values = [...response.matchAll(WirelessFields)][0].slice(1).join("").split("|");
+
+        // Load sections
+        for (const type of ["2.4", "5"]) {
+            document.querySelector(`[data-network="${type}"]`).innerHTML = `
+                <h4>Wireless Network (${type}GHz ${type === "5" ? "a/n/ac" : "b/g/n"})</h4>
+                <br>
+                <div><span>SSID:</span> <input value = "${netgear_decode(values[type === "2.4" ? 3 : 19])}" /></div>
+                <div><span>Password:</span> <input type = "password"value = "${netgear_decode(values[type === "2.4" ? 7 : 23])}"></div>
+                <div><span>Channel:</span> <select>${(() => {
+                    let options = "";
+                    for (const channel of channels[type]) {
+                        options += `<option value = "${channel}"${channel === values[type === "2.4" ? 16 : 32] ? " selected" : ""}>${channel}</option>`;
+                    }
+                    return options;
+                })()}</select></div>
+                <div><span>Mode:</span> <select>${(() => {
+                    let options = "";
+                    for (const index in modes[type]) {
+                        const mode = modes[type][+index];
+                        options += `<option value = "${mode}"${+index === +values[type === "2.4" ? 5 : 21] - 1 ? " selected" : ""}>${mode}</option>`;
+                    }
+                    return options;
+                })()}</select></div>
+                <div>
+                    <span>Security Protocol:</span>
+                    <select>
+                        <option value = "Disable">None</option>
+                        <option value = "WPA2-PSK">WPA2-AES</option>
+                        <option value = "AUTO-PSK">WPA2-AES/TKIP</option>
+                        <option value = "WPA2-Enterprise">WPA/WPA2 Enterprise</option>
+                    </select>
+                </div>
+                <br>
+                <input type = "checkbox" checked = "${values[type === "2.4" ? 1 : 17]}"> Enable SSID Broadcast <br>
+                ${type === "2.4" ? `<input type = "checkbox" checked = "${values[41]}"> Enable 20/40 MHz Coexistence` : ""}
+            `;
+        }
+
+        console.log(values);
+
+        // Remove status indicator and display
+        page_ready();
+    })();
+</script>
