@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang = "en">
+    <head>
+        <meta charset = "utf-8" />
+        <meta name = "viewport" content = "width=device-width,initial-scale=1.0" />
+        <meta name = "darkreader-lock" />
+
+        <!-- CSS -->
+        <link rel = "stylesheet" href = "/css/main.css" />
+        <link rel = "stylesheet" href = "/css/bootstrap-icons.min.css" />
+
+        <link rel = "icon" type = "image/png" href = "/assets/favicon.png" />
+        <title>NETGEAR C7800</title>
+    </head>
+    <body>
+        <header>
+            <img src = "/assets/netgear.png">
+            <p>NETGEAR<sup>®</sup> C7800</p>
+        </header>
+        <aside>
+            <nav>
+                <button active data-page = "dashboard">Home <i class = "bi bi-caret-right-fill"></i></button>
+                <button data-page = "docsis">Cable Connection <i class = "bi bi-caret-right-fill"></i></button>
+                <button data-page = "wireless">Wireless <i class = "bi bi-caret-right-fill"></i></button>
+                <button data-page = "devices">Attached Devices <i class = "bi bi-caret-right-fill"></i></button>
+                <button data-page = "readyshare">ReadySHARE <i class = "bi bi-caret-right-fill"></i></button>
+                <button data-page = "guest">Guest Network <i class = "bi bi-caret-right-fill"></i></button>
+            </nav>
+            <main></main>
+        </aside>
+        <footer>
+            <a href = "https://downloadcenter.netgear.com">Documentation</a> |
+            <a href = "https://support.netgear.com">Online Support</a> |
+            <a href = "https://github.com/iiPythonx">Modded by iiPython</a>
+        </footer>
+
+        <!-- JS -->
+        <script async>
+            // Copyright (c) 2024 iiPython
+
+            // Handle page loading
+            var controller = new AbortController();
+            const main_elem = document.querySelector("main");
+            async function fetch_page(page) {
+                const html = await (await fetch(`/pages/${page}.html`, { signal: controller.signal })).text();
+                return document.createRange().createContextualFragment(html);
+            }
+            async function load_page(page) {
+                main_elem.setAttribute("centered", "");
+                main_elem.innerHTML = `<div class = "lds-dual-ring"></div><div class = "hidden"></div>`;
+                document.querySelector(".hidden").append(await fetch_page(page));
+            }
+            function page_ready() {
+                main_elem.removeAttribute("centered");
+                for (const child of document.querySelector(".hidden").childNodes) main_elem.appendChild(child);
+                document.querySelector(".hidden").remove();
+                document.querySelector(".lds-dual-ring").remove();
+            }
+
+            // Load initial page (dashboard)
+            load_page("dashboard");
+
+            // Handle page buttons
+            for (const button of document.querySelectorAll("button[data-page]")) {
+                button.addEventListener("click", () => {
+                    controller.abort();
+                    controller = new AbortController();
+                    const active_button = document.querySelector("button[data-page][active]");
+                    if (active_button) active_button.removeAttribute("active");
+                    load_page(button.getAttribute("data-page"));
+                    button.setAttribute("active", "");
+                });
+            }
+        </script>
+    </body>
+</html>

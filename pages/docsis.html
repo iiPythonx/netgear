@@ -1,0 +1,68 @@
+<style>
+    #switch {
+        display: flex;
+        height: fit-content;
+        gap: 10px;
+    }
+    #switch > button {
+        width: 150px;
+    }
+    table, th, td {
+        border: 1px solid white;
+        border-collapse: collapse;
+    }
+    th, td {
+        padding: 10px;
+    }
+    #docsis-active-tab {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+</style>
+<div id = "switch">
+    <button data-tab = "stat" active>Statistics <i class = "bi bi-caret-down-fill"></i></button>
+    <button data-tab = "bond">Bonded Channels <i class = "bi bi-caret-down-fill"></i></button>
+    <button data-tab = "ofdm">OFDM(A) Channels <i class = "bi bi-caret-down-fill"></i></button>
+</div>
+<div id = "docsis-active-tab"></div>
+<script async type = "module">
+    import { fetch_endpoint } from "/js/main.js";
+    (async () => {
+        const div = document.getElementById("docsis-active-tab");
+
+        // Load tables from Router
+        const dom = new DOMParser().parseFromString(await fetch_endpoint("DocsisStatus.asp"), "text/html");
+        const tables = {
+            bond: `
+                <h4>Downstream Bonded Channels</h4>
+                <table>${dom.querySelector("#dsTable > tbody").innerHTML}</table>
+                <h4>Upstream Bonded Channels</h4>
+                <table>${dom.querySelector("#usTable > tbody").innerHTML}</table>
+            `,
+            ofdm: `
+                <h4>Downstream OFDM Channels</h4>
+                <table>${dom.querySelector("#d31dsTable > tbody").innerHTML}</table>
+                <h4>Upstream OFDMA Channels</h4>
+                <table>${dom.querySelector("#d31usTable > tbody").innerHTML}</table>
+            `,
+            stat: `
+                <h4>Startup Procedure</h4>
+                <table>${dom.querySelector("#startup_procedure_table > tbody").innerHTML}</table>
+            `
+        };
+
+        // Handle tab loading
+        const load_tab = tab => div.innerHTML = tables[tab];
+        load_tab("stat");  // Initial tab
+        for (const button of document.querySelectorAll("button[data-tab]")) {
+            button.addEventListener("click", () => {
+                const active_button = document.querySelector("button[data-tab][active]");
+                if (active_button) active_button.removeAttribute("active");
+                load_tab(button.getAttribute("data-tab"));
+                button.setAttribute("active", "");
+            });
+        }
+        page_ready();
+    })();
+</script>

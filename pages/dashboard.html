@@ -1,0 +1,82 @@
+<style>
+    .status-card {
+        width: 190px;
+        height: 190px;
+        padding: 10px;
+        background-color: #3a3a3a;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border-radius: 15px;
+        gap: 10px;
+    }
+    .status-card > hr {
+        width: 100%;
+    }
+    .status-card > i {
+        font-size: 70px;
+    }
+    .status-card > div {
+        width: 90%;
+        display: flex;
+        justify-content: space-between;
+    }
+    .status-good {
+        color: #198754;
+    }
+    .status-bad {
+        color: #dc3545;
+    }
+    #dashboard-status-cards {
+        display: flex;
+        gap: 20px;
+    }
+</style>
+<div id = "dashboard-status-cards"></div>
+<script async type = "module">
+    import { fetch_endpoint } from "/js/main.js";
+    import { DashboardFields } from "/js/expressions.js";
+
+    (async () => {
+        const element = document.getElementById("dashboard-status-cards");
+
+        // Fetch data from router
+        const response = await fetch_endpoint("DashBoard.asp");
+        const values = [...response.matchAll(DashboardFields)][0].slice(1).join("").split("|");
+
+        // Handle text decoding (NETGEAR, what the FUCK?)
+        function decode(text) {
+            const mapping = { "7C": "|", "5C": "\\", "27": "'", "22": "\"", "58": ":", "59": ";", "47": "/", "23": "#" };
+            for (const match of [...text.matchAll(/#(\d[\dC])/g)][0].slice(1)) text = text.replace(`#${match}`, mapping[match]);
+            return text;
+        }
+
+        // Write new card data
+        for (const item of [
+            { icon: "globe-americas", name: "Cable Connection", index: 0, fn: v => +v ? ["bad", "OFFLINE"] : ["good", "ONLINE"] },
+            { icon: "wifi", name: "Wireless", index: 4, fn: v => ["good", decode(v)], status: "SSID" },
+            { icon: "hdd-network", name: "Attached Devices", index: 6, fn: v => v >= 40 ? ["bad", v] : ["good", v], status: "DEVICES" },
+            { icon: "usb-symbol", name: "ReadySHARE", index: 9, fn: v => ["good", +v ? "ENABLED" : "NO USB"] },
+            { icon: "people-fill", name: "Guest Network", index: 10, fn: v => v === "none" ? ["good", "DISABLED"] : ["bad", "ENABLED"] },
+        ]) {
+            const [ status, text ] = item.fn(values[item.index]);
+
+            const card = document.createElement("div");
+            card.classList.add("status-card");
+            card.innerHTML = `
+                <i class = "bi bi-${item.icon}"></i>
+                <h4><b>${item.name}</b></h4>
+                <hr>
+                <div>
+                    <h4>${item.status || 'STATUS'}:</h4>
+                    <h4 class = "status-${status}">${text}</h4>
+                </div>
+            `;
+            element.appendChild(card);
+        }
+
+        // Remove status indicator and display
+        page_ready();
+    })();
+</script>
