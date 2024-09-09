@@ -31,6 +31,24 @@
     (async () => {
         const div = document.getElementById("docsis-active-tab");
 
+        // Handle cleaning up time (https://stackoverflow.com/a/34270811)
+        function convert_time(seconds) {
+            const levels = [
+                [Math.floor(seconds / 31536000), "years"],
+                [Math.floor((seconds % 31536000) / 86400), "days"],
+                [Math.floor(((seconds % 31536000) % 86400) / 3600), "hours"],
+                [Math.floor((((seconds % 31536000) % 86400) % 3600) / 60), "minutes"],
+                [(((seconds % 31536000) % 86400) % 3600) % 60, "seconds"],
+            ];
+
+            let text = "";
+            for (let i = 0, max = levels.length; i < max; i++) {
+                if (levels[i][0] === 0) continue;
+                text += ", " + levels[i][0] + " " + (levels[i][0] === 1 ? levels[i][1].substr(0, levels[i][1].length - 1): levels[i][1]);
+            };
+            return text.trim();
+        }
+
         // Load tables from Router
         const dom = new DOMParser().parseFromString(await fetch_endpoint("DocsisStatus.asp"), "text/html");
         const tables = {
@@ -47,6 +65,12 @@
                 <table>${dom.querySelector("#d31usTable > tbody").innerHTML}</table>
             `,
             stat: `
+                <h4>System</h4>
+                <p>${dom.querySelector("#Current_systemtime").innerText.replace("Current System ", "")}</p>
+                <p>Uptime: ${(() => {
+                    const [ hours, minutes, seconds ] = dom.querySelector("#SystemUpTime").innerText.split("Time:")[1].trim().split(":");
+                    return convert_time((+hours * 3600) + (+minutes * 60) + +seconds);
+                })().slice(2)}</p>
                 <h4>Startup Procedure</h4>
                 <table>${dom.querySelector("#startup_procedure_table > tbody").innerHTML}</table>
             `

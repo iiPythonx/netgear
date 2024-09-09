@@ -64,6 +64,7 @@ main {
     padding: 20px;
     display: flex;
     height: 900px;
+    overflow-y: scroll;
     flex-direction: column;
 }
 main[centered] {
