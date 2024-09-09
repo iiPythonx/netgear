@@ -1,0 +1,109 @@
+<style>
+    table, th, td {
+        border: 1px solid white;
+        border-collapse: collapse;
+    }
+    th, td {
+        padding: 10px;
+    }
+    td:first-child {
+        width: 4%;
+        text-align: center;
+    }
+
+    /* Make the wireless tables align */
+    #devices-24g td:not(:first-of-type), #devices-5g td:not(:first-of-type) {
+        width: 25%;
+    }
+</style>
+<h4>Wired Devices</h4>
+<table>
+    <tbody id = "devices-wired">
+        <tr>
+            <td>#</td>
+            <td>Device Name</td>
+            <td>IP Address</td>
+            <td>MAC Address</td>
+        </tr>
+    </tbody>
+</table>
+<h4>2.4GHz Devices</h4>
+<table>
+    <tbody id = "devices-24g">
+        <tr>
+            <td>#</td>
+            <td>Device Name</td>
+            <td>IP Address</td>
+            <td>RSSI</td>
+            <td>MAC Address</td>
+        </tr>
+    </tbody>
+</table>
+<h4>5GHz Devices</h4>
+<table>
+    <tbody id = "devices-5g">
+        <tr>
+            <td>#</td>
+            <td>Device Name</td>
+            <td>IP Address</td>
+            <td>RSSI</td>
+            <td>MAC Address</td>
+        </tr>
+    </tbody>
+</table>
+<script async type = "module">
+    import { fetch_endpoint } from "/js/main.js";
+    import { netgear_decode, WiredClient, WirelessClient, WirelessClient5G } from "/js/expressions.js";
+
+    (async () => {
+        const tables = {
+            eth: document.getElementById("devices-wired"),
+            "5g": document.getElementById("devices-5g"),
+            "24g": document.getElementById("devices-24g"),
+        }
+        const response = await fetch_endpoint("RgAttachedDevices.asp");
+        const fix = item => item === "n#47a" ? "N/A" : item;
+
+        // Match wired clients
+        const wired_clients = [...response.matchAll(WiredClient)];
+        for (const index in wired_clients) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${+index + 1}</td>
+                <td>${wired_clients[index].slice(1).map(x => fix(x)).join("</td><td>")}</td>
+            `;
+            tables.eth.appendChild(tr);
+        }
+
+        // Match 2.4g clients
+        const clients24g = [...response.matchAll(WirelessClient)];
+        for (const index in clients24g) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${+index + 1}</td>
+                <td>${fix(clients24g[index][1])}</td>
+                <td>${clients24g[index][2]}</td>
+                <td>-${clients24g[index][4]} dBm</td>
+                <td>${clients24g[index][3]}</td>
+            `;
+            tables["24g"].appendChild(tr);
+        }
+
+        // Match 5G clients
+        const clients5g = [...response.matchAll(WirelessClient5G)];
+        for (const index in clients5g) {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${+index + 1}</td>
+                <td>${fix(clients5g[index][1])}</td>
+                <td>${clients5g[index][2]}</td>
+                <td>-${clients5g[index][4]} dBm</td>
+                <td>${clients5g[index][3]}</td>
+            `;
+            tables["5g"].appendChild(tr);
+        }
+        console.log(clients24g, clients5g);
+
+        page_ready();
+    })();
+</script>

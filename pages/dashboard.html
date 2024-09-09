@@ -36,7 +36,7 @@
 <div id = "dashboard-status-cards"></div>
 <script async type = "module">
     import { fetch_endpoint } from "/js/main.js";
-    import { DashboardFields } from "/js/expressions.js";
+    import { netgear_decode, DashboardFields } from "/js/expressions.js";
 
     (async () => {
         const element = document.getElementById("dashboard-status-cards");
@@ -45,17 +45,10 @@
         const response = await fetch_endpoint("DashBoard.asp");
         const values = [...response.matchAll(DashboardFields)][0].slice(1).join("").split("|");
 
-        // Handle text decoding (NETGEAR, what the FUCK?)
-        function decode(text) {
-            const mapping = { "7C": "|", "5C": "\\", "27": "'", "22": "\"", "58": ":", "59": ";", "47": "/", "23": "#" };
-            for (const match of [...text.matchAll(/#(\d[\dC])/g)][0].slice(1)) text = text.replace(`#${match}`, mapping[match]);
-            return text;
-        }
-
         // Write new card data
         for (const item of [
             { icon: "globe-americas", name: "Cable Connection", index: 0, fn: v => +v ? ["bad", "OFFLINE"] : ["good", "ONLINE"] },
-            { icon: "wifi", name: "Wireless", index: 4, fn: v => ["good", decode(v)], status: "SSID" },
+            { icon: "wifi", name: "Wireless", index: 4, fn: v => ["good", netgear_decode(v)], status: "SSID" },
             { icon: "hdd-network", name: "Attached Devices", index: 6, fn: v => v >= 40 ? ["bad", v] : ["good", v], status: "DEVICES" },
             { icon: "usb-symbol", name: "ReadySHARE", index: 9, fn: v => ["good", +v ? "ENABLED" : "NO USB"] },
             { icon: "people-fill", name: "Guest Network", index: 10, fn: v => v === "none" ? ["good", "DISABLED"] : ["bad", "ENABLED"] },
